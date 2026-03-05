@@ -357,12 +357,12 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
                       // 아무것도 하지 않고 계속 체크
                     }
                   } else if (paymentWindow && paymentWindow.closed) {
-                    // 팝업이 닫혔으면 interval 정리하고 대기 상태로 복귀
+                    // 팝업이 닫혔으면 interval 정리
                     clearInterval(checkPopupClosed);
-                    console.log("Popup closed by user");
+                    console.log("Popup closed");
                     sessionStorage.removeItem("paymentProcessing");
-                    // 사용자가 팝업을 닫은 경우 메인 페이지로 복귀 (결제 취소)
-                    window.location.href = window.location.pathname;
+                    // 결제 완료 시: result HTML이 이미 부모 페이지를 /?payment=success&step=3으로 이동시킴
+                    // 결제 취소 시: 사용자는 이미 폼 페이지에 있으므로 별도 이동 불필요
                   }
                 } catch (err) {
                   console.error("Error checking popup:", err);
