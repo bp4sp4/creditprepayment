@@ -337,8 +337,7 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
                       // 크로스도메인 체크 - 같은 도메인이면 URL 확인 가능
                       const popupUrl = paymentWindow.location.href;
                       if (
-                        popupUrl.includes("?payment=success") ||
-                        popupUrl.includes("api/payments/result")
+                        popupUrl.includes("?payment=success")
                       ) {
                         // 결제 완료 페이지 도달 - 팝업 닫기 신호 전송
                         if (!popupClosing) {
