@@ -17,24 +17,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "취업자격증 연계 신청 서비스",
-  description: "취업자격증 연계 신청 서비스 웹사이트",
+  title: "취업자격증 발급비 선납 서비스",
+  description: "취업자격증 발급비 선납 웹사이트",
   openGraph: {
-    title: "취업자격증 연계 신청 서비스",
-    description: "취업자격증 연계 신청 서비스 웹사이트",
+    title: "취업자격증 발급비 선납 서비스",
+    description: "취업자격증 발급비 선납 웹사이트",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "취업자격증 연계 신청 서비스",
+        alt: "취업자격증 발급비 선납 서비스 사이트",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "취업자격증 연계 신청 서비스",
-    description: "취업자격증 연계 신청 서비스 웹사이트",
+    title: "취업자격증 발급비 선납 서비스 사이트",
+    description: "취업자격증 발급비 선납 웹사이트",
     images: ["/og-image.png"],
   },
 };

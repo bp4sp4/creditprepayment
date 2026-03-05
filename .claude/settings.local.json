@@ -22,7 +22,8 @@
       "Bash(lsof -ti:3000 -ti:3001 2>/dev/null | head -5)",
       "Bash(grep -r \"SERVICE_ROLE\\\\|service_role\" /Users/korhrd/Documents/GitHub/creaditprepayment/.env* 2>/dev/null | head -5; ls /Users/korhrd/Documents/GitHub/creaditprepayment/.env* 2>/dev/null)",
       "Bash(git -C /Users/korhrd/Documents/GitHub/creaditprepayment remote -v)",
-      "Bash(git -C /Users/korhrd/Documents/GitHub/creaditprepayment remote set-url origin https://github.com/bp4sp4/creditprepayment.git)"
+      "Bash(git -C /Users/korhrd/Documents/GitHub/creaditprepayment remote set-url origin https://github.com/bp4sp4/creditprepayment.git)",
+      "Bash(vercel env ls 2>/dev/null || echo \"vercel CLI not available\")"
     ]
   }
 }

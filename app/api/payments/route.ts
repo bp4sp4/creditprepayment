@@ -19,7 +19,8 @@ export async function POST(request: NextRequest) {
     const payappShopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생교육';
     const payappLinkKey = process.env.PAYAPP_LINK_KEY || '';
     let baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
-                  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+                  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` :
+                  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'));
 
     baseUrl = baseUrl.replace(/\/$/, '');
 
