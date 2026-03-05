@@ -236,6 +236,12 @@ export async function GET(request: NextRequest) {
       \`;
       document.head.appendChild(style);
 
+      // 결제 정보 로컬스토리지에 저장 (부모 창에서 읽을 수 있도록)
+      try {
+        localStorage.setItem('payment_mul_no', '${mul_no || ''}');
+        localStorage.setItem('payment_date', new Date().toISOString());
+      } catch(e) {}
+
       // 즉시 리다이렉트 (애니메이션은 0.5초만)
       setTimeout(function() {
         if (window.opener) {
@@ -585,6 +591,12 @@ export async function POST(request: NextRequest) {
         }
       \`;
       document.head.appendChild(style);
+
+      // 결제 정보 로컬스토리지에 저장 (부모 창에서 읽을 수 있도록)
+      try {
+        localStorage.setItem('payment_mul_no', '${mul_no || ''}');
+        localStorage.setItem('payment_date', new Date().toISOString());
+      } catch(e) {}
 
       // 즉시 리다이렉트 (애니메이션은 0.5초만)
       setTimeout(function() {

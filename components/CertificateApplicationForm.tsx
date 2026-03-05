@@ -134,6 +134,7 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [selectedCategoryIdx, setSelectedCategoryIdx] = useState(0);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [paymentInfo, setPaymentInfo] = useState<{ mulNo: string; paidAt: string } | null>(null);
   const [photoUploadChoice, setPhotoUploadChoice] = useState<"yes" | "no">(
     "no",
   );
@@ -416,6 +417,14 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
         console.log("Setting step to 3 - Payment completed (stepParam=3 detected)");
         sessionStorage.removeItem("paymentProcessing");
         sessionStorage.setItem("paymentProcessed", "true");
+        // localStorage에서 결제 정보 읽기
+        const mulNo = localStorage.getItem("payment_mul_no") || "";
+        const paidAt = localStorage.getItem("payment_date") || new Date().toISOString();
+        if (mulNo || paidAt) {
+          setPaymentInfo({ mulNo, paidAt });
+          localStorage.removeItem("payment_mul_no");
+          localStorage.removeItem("payment_date");
+        }
         setStep(3);
         setIsInitializing(false);
         // URL 파라미터 제거 (step 설정 후)
@@ -664,6 +673,35 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
               style={{ margin: "0 auto 24px" }}
             />
             <h1 className={styles.title}>결제가 완료되었습니다!</h1>
+            {paymentInfo && (
+              <div style={{
+                marginTop: "24px",
+                padding: "16px 24px",
+                backgroundColor: "#f9fafb",
+                borderRadius: "12px",
+                textAlign: "left",
+                display: "inline-block",
+                minWidth: "260px",
+              }}>
+                <div style={{ marginBottom: "10px" }}>
+                  <span style={{ fontSize: "12px", color: "#6b7280" }}>결제일</span>
+                  <p style={{ margin: "2px 0 0", fontSize: "15px", fontWeight: 600, color: "#111827" }}>
+                    {new Date(paymentInfo.paidAt).toLocaleString("ko-KR", {
+                      year: "numeric", month: "2-digit", day: "2-digit",
+                      hour: "2-digit", minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+                {paymentInfo.mulNo && (
+                  <div>
+                    <span style={{ fontSize: "12px", color: "#6b7280" }}>결제번호</span>
+                    <p style={{ margin: "2px 0 0", fontSize: "14px", fontWeight: 600, color: "#111827", fontFamily: "monospace" }}>
+                      {paymentInfo.mulNo}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
