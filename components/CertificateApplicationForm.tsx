@@ -127,7 +127,7 @@ const CERTIFICATE_CATEGORIES = [
 ];
 
 function StepFlowContent({ clickSource }: { clickSource: string }) {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(2);
   const [loading, setLoading] = useState(false);
   const [showCertModal, setShowCertModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -184,6 +184,7 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
     certificates: [] as string[],
     cash_receipt: "",
     photo: null as File | null,
+    courseCount: "",
   });
 
   // 파일 이름 안전하게 변환
@@ -248,33 +249,34 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
         photo_url = data?.path;
       }
 
-      // 결제 금액 계산 (자격증 개수 * 100,000원)
-      const amount = formData.certificates.length * 100000;
+      // 결제 금액 계산 (과목 수 * 100,000원)
+      const courseCount = parseInt(formData.courseCount) || 0;
+      const amount = courseCount * 100000;
       const orderId = `CERT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      // 자격증 신청 + 결제 정보 함께 저장
-      const { data: applicationData, error: insertError } = await supabase
-        .from("certificate_applications")
-        .insert([
-          {
-            name: formData.name,
-            contact: formData.contact,
-            birth_prefix: formData.birth_prefix,
-            address: formData.address,
-            address_main: formData.addressMain,
-            address_detail: formData.addressDetail,
-            certificates: formData.certificates,
-            cash_receipt: formData.cash_receipt,
-            photo_url,
-            order_id: orderId,
-            amount: amount,
-            payment_status: "pending",
-          },
-        ])
-        .select()
-        .single();
+      // 자격증 신청 + 결제 정보 함께 저장 (서버 API 경유 - RLS 우회)
+      const appResponse = await fetch("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          contact: formData.contact,
+          birth_prefix: formData.birth_prefix,
+          address: formData.address,
+          address_main: formData.addressMain,
+          address_detail: formData.addressDetail,
+          certificates: formData.certificates,
+          cash_receipt: formData.cash_receipt,
+          photo_url,
+          order_id: orderId,
+          amount: amount,
+          payment_status: "pending",
+          source: "prepayment",
+        }),
+      });
 
-      if (insertError) throw insertError;
+      const appResult = await appResponse.json();
+      if (!appResponse.ok) throw new Error(appResult.error || "신청 저장 실패");
 
       // 서버 엔드포인트로 PayApp 결제 요청 (CORS 우회)
       try {
@@ -290,8 +292,8 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
           },
           body: JSON.stringify({
             orderId,
-            goodname: `자격증 취득 신청 (${formData.certificates.length}개)`,
-            price: formData.certificates.length * 100000,
+            goodname: `자격증 취득 신청 (${courseCount}과정)`,
+            price: courseCount * 100000,
             recvphone: formData.contact,
             recvname: formData.name,
             var1: orderId,
@@ -501,7 +503,7 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
                       lineHeight: "1.3",
                     }}
                   >
-                    취업자격증 연계 신청
+                    자격증 연계 신청
                   </h1>
                 </div>
                 <StepIndicator step={step} />
@@ -524,48 +526,18 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
             className={styles.stepWrapper}
             style={{ display: "flex", flexDirection: "column" }}
           >
-            {/* 프로그레스바 */}
-            <div className={styles.progressContainer}>
-              <div className={styles.progressLabel}>작성 진행도</div>
-              <div className={styles.progressBar}>
-                <div
-                  className={styles.progressFill}
-                  style={{
-                    width: `${Math.min(
-                      (((formData.name ? 1 : 0) +
-                        (formData.contact && isPhoneValid ? 1 : 0) +
-                        (formData.birth_prefix.length === 6 ? 1 : 0) +
-                        (formData.addressMain ? 1 : 0) +
-                        (formData.certificates.length > 0 ? 1 : 0) +
-                        (privacyAgreed ? 1 : 0)) /
-                        6) *
-                        100,
-                      100,
-                    )}%`,
-                  }}
-                />
-              </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#6B7280",
-                  textAlign: "right",
-                }}
-              >
-                {Math.ceil(
-                  (((formData.name ? 1 : 0) +
-                    (formData.contact && isPhoneValid ? 1 : 0) +
-                    (formData.birth_prefix.length === 6 ? 1 : 0) +
-                    (formData.addressMain ? 1 : 0) +
-                    (formData.certificates.length > 0 ? 1 : 0) +
-                    (privacyAgreed ? 1 : 0)) /
-                    6) *
-                    100,
-                )}
-                %
-              </div>
-            </div>
-
+          <div style={{ marginBottom: "36px" }}>
+                  <h1
+                    style={{
+                      fontSize: "28px",
+                      fontWeight: "700",
+                      color: "#111827",
+                      lineHeight: "1.3",
+                    }}
+                  >
+                    자격증 연계 신청
+                  </h1>
+                </div>
             <div className={styles.inputGroup}>
               <label className={styles.inputLabel}>
                 이름
@@ -581,336 +553,75 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
                 placeholder="성함을 입력해주세요"
               />
             </div>
-            {formData.name && (
-              <div className={styles.inputGroup}>
-                <label className={styles.inputLabel}>
-                  연락처
-                  <span className={styles.requiredMark}>*</span>
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className={styles.inputField}
+            <div className={styles.inputGroup}>
+              <label className={styles.inputLabel}>
+                연락처
+                <span className={styles.requiredMark}>*</span>
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                className={styles.inputField}
+                style={{
+                  borderColor:
+                    formData.contact && !isPhoneValid ? "#ef4444" : undefined,
+                  backgroundColor:
+                    formData.contact && !isPhoneValid ? "#fee2e2" : undefined,
+                }}
+                value={formData.contact}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    contact: formatPhoneNumber(e.target.value),
+                  })
+                }
+                placeholder="010-0000-0000"
+                maxLength={13}
+              />
+              {formData.contact && !isPhoneValid && (
+                <p
                   style={{
-                    borderColor:
-                      formData.contact && !isPhoneValid ? "#ef4444" : undefined,
-                    backgroundColor:
-                      formData.contact && !isPhoneValid ? "#fee2e2" : undefined,
+                    color: "#dc2626",
+                    fontSize: "12px",
+                    marginTop: "4px",
                   }}
-                  value={formData.contact}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      contact: formatPhoneNumber(e.target.value),
-                    })
-                  }
-                  placeholder="010-0000-0000"
-                  maxLength={13}
-                />
-                {formData.contact && !isPhoneValid && (
-                  <p
-                    style={{
-                      color: "#dc2626",
-                      fontSize: "12px",
-                      marginTop: "4px",
-                    }}
-                  >
-                    010-XXXX-XXXX 형식으로 입력해주세요
-                  </p>
-                )}
-              </div>
-            )}
-            {formData.name && formData.contact && isPhoneValid && (
-              <div className={styles.inputGroup}>
-                <label className={styles.inputLabel}>
-                  생년월일
-                  <span className={styles.requiredMark}>*</span>
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  className={styles.inputField}
-                  style={{
-                    borderColor:
-                      formData.birth_prefix &&
-                      formData.birth_prefix.length !== 6
-                        ? "#fbbf24"
-                        : undefined,
-                    backgroundColor:
-                      formData.birth_prefix &&
-                      formData.birth_prefix.length !== 6
-                        ? "#fef3c7"
-                        : undefined,
-                  }}
-                  value={formData.birth_prefix}
-                  onChange={(e) => {
-                    const numbers = e.target.value
-                      .replace(/[^0-9]/g, "")
-                      .slice(0, 6);
-                    setFormData({ ...formData, birth_prefix: numbers });
-                  }}
-                  placeholder="YYMMDD (예: 730104)"
-                />
-                {formData.birth_prefix &&
-                  formData.birth_prefix.length !== 6 && (
-                    <p
-                      style={{
-                        color: "#b45309",
-                        fontSize: "12px",
-                        marginTop: "4px",
-                      }}
-                    >
-                      6자리 숫자를 입력해주세요 (예: 730104)
-                    </p>
-                  )}
-                {formData.birth_prefix &&
-                  formData.birth_prefix.length === 6 && (
-                    <p
-                      style={{
-                        color: "#16a34a",
-                        fontSize: "12px",
-                        marginTop: "4px",
-                      }}
-                    >
-                      ✓ 올바른 형식입니다
-                    </p>
-                  )}
-              </div>
-            )}
-            {formData.name &&
-              isPhoneValid &&
-              formData.birth_prefix.length === 6 && (
-                <div className={styles.inputGroup}>
-                  <label className={styles.inputLabel}>
-                    자격증 수령 주소
-                    <span className={styles.requiredMark}>*</span>
-                  </label>
-                  <DaumPostcodeInput
-                    onComplete={({ zonecode, address, addressDetail }) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        postalCode: zonecode,
-                        addressMain: address,
-                        addressDetail: "",
-                        address: `${zonecode} ${address}`,
-                      }));
-                    }}
-                  />
-                  {formData.addressMain && (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 8,
-                        marginTop: 12,
-                      }}
-                    >
-                      <input
-                        type="text"
-                        className={styles.inputField}
-                        value={`${formData.postalCode} ${formData.addressMain}`}
-                        readOnly
-                        tabIndex={-1}
-                      />
-                      <input
-                        type="text"
-                        className={styles.inputField}
-                        value={formData.addressDetail}
-                        onChange={(e) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            addressDetail: e.target.value,
-                            address: `${prev.postalCode} ${prev.addressMain} ${e.target.value}`,
-                          }));
-                        }}
-                        placeholder="상세주소 (예: 202호)"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-            {formData.name &&
-              formData.contact &&
-              formData.birth_prefix.length === 6 &&
-              formData.addressMain && (
-                <div className={styles.inputGroup}>
-                  <label className={styles.inputLabel}>
-                    자격증 선택
-                    <span className={styles.requiredMark}>*</span>
-                  </label>
-                  <div
-                    className={`${styles.inputField} ${styles.courseSelectField}`}
-                    onClick={() => setShowCertModal(true)}
-                  >
-                    <span
-                      className={
-                        formData.certificates.length > 0
-                          ? styles.courseSelectedText
-                          : styles.coursePlaceholder
-                      }
-                      style={{
-                        display: "inline-block",
-                        maxWidth: 480,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {formData.certificates.length > 0
-                        ? formData.certificates.length <= 3
-                          ? formData.certificates.join(", ")
-                          : `${formData.certificates.slice(0, 3).join(", ")} 외 ${formData.certificates.length - 3}개`
-                        : "발급받을 자격증을 선택하세요"}
-                    </span>
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <path
-                        d="M5 7.5L10 12.5L15 7.5"
-                        stroke="#6B7280"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              )}
-            {formData.name &&
-              formData.contact &&
-              formData.birth_prefix.length === 6 &&
-              formData.addressMain &&
-              formData.certificates.length > 0 && (
-                <div className={styles.inputGroup}>
-                  <label className={styles.inputLabel}>
-                    증명사진 첨부 여부
-                    <span className={styles.optionalNote}>
-                      (*미첨부 시 사진란 공란, 효력 영향 없음)
-                    </span>
-                  </label>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "16px",
-                      marginBottom: "12px",
-                    }}
-                  >
-                    <label
-                      style={{ display: "flex", alignItems: "center", gap: 4 }}
-                    >
-                      <input
-                        type="radio"
-                        name="photoUpload"
-                        checked={photoUploadChoice === "yes"}
-                        onChange={() => {
-                          setPhotoUploadChoice("yes");
-                        }}
-                      />
-                      예
-                    </label>
-                    <label
-                      style={{ display: "flex", alignItems: "center", gap: 4 }}
-                    >
-                      <input
-                        type="radio"
-                        name="photoUpload"
-                        checked={photoUploadChoice === "no"}
-                        onChange={() => {
-                          setPhotoUploadChoice("no");
-                          setFormData({ ...formData, photo: null });
-                        }}
-                      />
-                      아니요
-                    </label>
-                  </div>
-                  {photoUploadChoice === "yes" && (
-                    <>
-                      <label className={styles.inputLabel}>증명사진 첨부</label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className={styles.inputField}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            photo: e.target.files?.[0] || null,
-                          })
-                        }
-                        style={{
-                          textAlign: "center",
-                          cursor: "pointer",
-                          color: formData.photo ? "#4e5968" : "#9ca3af",
-                          fontSize: "14px",
-                          fontWeight: formData.photo ? "500" : "400",
-                        }}
-                      />
-                      {formData.photo && (
-                        <div style={{ marginTop: 16, textAlign: "center" }}>
-                          <img
-                            src={URL.createObjectURL(formData.photo)}
-                            alt="미리보기"
-                            onClick={() => setShowPhotoPreview(true)}
-                            style={{
-                              width: 120,
-                              height: 120,
-                              objectFit: "cover",
-                              borderRadius: 12,
-                              border: "1.5px solid #e5e8eb",
-                              boxShadow: "0 2px 8px 0 rgba(0,0,0,0.04)",
-                              cursor: "pointer",
-                              transition: "transform 0.2s",
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.transform = "scale(1.05)";
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.transform = "scale(1)";
-                            }}
-                          />
-                          <p
-                            style={{
-                              fontSize: 12,
-                              color: "#999",
-                              marginTop: 8,
-                            }}
-                          >
-                            클릭하여 크게 보기
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-
-            {formData.name &&
-              formData.contact &&
-              formData.birth_prefix.length === 6 &&
-              formData.addressMain &&
-              formData.certificates.length > 0 && (
-                <div
-                  className={styles.inputGroup}
-                  style={{ marginTop: "20px" }}
                 >
-                  <label className={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      checked={privacyAgreed}
-                      onChange={(e) => setPrivacyAgreed(e.target.checked)}
-                      className={styles.checkbox}
-                    />
-                    <span>
-                      <button
-                        type="button"
-                        className={styles.privacyLink}
-                        onClick={() => setShowPrivacyModal(true)}
-                      >
-                        개인정보처리방침
-                      </button>{" "}
-                      동의
-                    </span>
-                  </label>
-                </div>
+                  010-XXXX-XXXX 형식으로 입력해주세요
+                </p>
               )}
+            </div>
+            <div className={styles.inputGroup}>
+              <label className={styles.inputLabel}>
+                과목 수
+                <span className={styles.requiredMark}>*</span>
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                className={styles.inputField}
+                value={formData.courseCount}
+                onChange={(e) => {
+                  const numbers = e.target.value.replace(/[^0-9]/g, "");
+                  setFormData({ ...formData, courseCount: numbers });
+                }}
+                placeholder="신청할 과목 수를 입력해주세요"
+              />
+              {formData.courseCount && parseInt(formData.courseCount) > 0 && (
+                <p
+                  style={{
+                    color: "#2563eb",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    marginTop: "8px",
+                  }}
+                >
+                  결제 금액: {(parseInt(formData.courseCount) * 100000).toLocaleString()}원
+                  <span style={{ color: "#6B7280", fontWeight: "400", fontSize: "12px", marginLeft: "8px" }}>
+                    ({formData.courseCount}과정 × 100,000원)
+                  </span>
+                </p>
+              )}
+            </div>
             <div
               style={{
                 display: "flex",
@@ -925,10 +636,8 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
                 disabled={
                   !formData.name ||
                   !isPhoneValid ||
-                  formData.birth_prefix.length !== 6 ||
-                  !formData.addressMain ||
-                  formData.certificates.length === 0 ||
-                  !privacyAgreed ||
+                  !formData.courseCount ||
+                  parseInt(formData.courseCount) <= 0 ||
                   loading
                 }
                 onClick={handleSubmit}

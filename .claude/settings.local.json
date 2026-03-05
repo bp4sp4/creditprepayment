@@ -18,7 +18,11 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nImprove popup closure detection and handling\n\n- Detect when popup navigates to payment result page\n- Actively close popup from parent window after completion detected\n- Add timeout fallback \\(20 seconds\\) for cross-domain scenarios\n- Log popup status for debugging\n- Wait 1 second after closing popup before navigating parent page\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git commit:*)",
       "Bash(git restore:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(lsof -ti:3000 -ti:3001 2>/dev/null | head -5)",
+      "Bash(grep -r \"SERVICE_ROLE\\\\|service_role\" /Users/korhrd/Documents/GitHub/creaditprepayment/.env* 2>/dev/null | head -5; ls /Users/korhrd/Documents/GitHub/creaditprepayment/.env* 2>/dev/null)",
+      "Bash(git -C /Users/korhrd/Documents/GitHub/creaditprepayment remote -v)",
+      "Bash(git -C /Users/korhrd/Documents/GitHub/creaditprepayment remote set-url origin https://github.com/bp4sp4/creditprepayment.git)"
     ]
   }
 }

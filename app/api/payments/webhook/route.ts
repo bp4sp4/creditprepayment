@@ -1,6 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+async function sendSlackNotification(data: {
+  name: string;
+  amount: number;
+  mul_no: string;
+  payment_status: 'paid' | 'failed';
+}) {
+  const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
+  if (!slackWebhookUrl) return;
+
+  try {
+    const message = {
+      text: `[선납부신청] 결제 ${data.payment_status === 'paid' ? '완료' : '실패'} 알림`,
+      attachments: [
+        {
+          color: data.payment_status === 'paid' ? '#28A745' : '#EE5A6F',
+          fields: [
+            { title: '신청자', value: data.name, short: true },
+            { title: '결제 금액', value: `${data.amount.toLocaleString()}원`, short: true },
+            { title: '결제번호', value: data.mul_no || '-', short: true },
+            { title: '상태', value: data.payment_status === 'paid' ? '✅ 결제 완료' : '❌ 결제 실패', short: true },
+            { title: '시간', value: new Date().toLocaleString('ko-KR'), short: false },
+          ],
+        },
+      ],
+    };
+    await fetch(slackWebhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(message),
+    });
+  } catch (error) {
+    console.error('Slack 알림 전송 실패:', error);
+  }
+}
+
 /**
  * PayApp 결제 웹훅
  * PayApp에서 서버로 직접 호출하는 feedbackurl
@@ -56,13 +91,20 @@ export async function POST(request: NextRequest) {
         return new NextResponse('FAIL', { status: 200 });
       }
 
-      // 결제 성공 로그
+      // 결제 성공 로그 + 슬랙 알림
       if (appData) {
         await supabase.from('payment_logs').insert({
           app_id: appData.id,
           action: 'payment_success',
           amount: parseInt(price || '0'),
           response_data: Object.fromEntries(params)
+        });
+
+        await sendSlackNotification({
+          name: appData.name,
+          amount: parseInt(price || '0'),
+          mul_no: mul_no || '',
+          payment_status: 'paid',
         });
       }
 
@@ -89,12 +131,19 @@ export async function POST(request: NextRequest) {
         console.error('Database update error:', updateError);
         return new NextResponse('FAIL', { status: 200 });
       } else if (appData) {
-        // 결제 실패 로그
+        // 결제 실패 로그 + 슬랙 알림
         await supabase.from('payment_logs').insert({
           app_id: appData.id,
           action: 'payment_failed',
           error_message: message,
           response_data: Object.fromEntries(params)
+        });
+
+        await sendSlackNotification({
+          name: appData.name,
+          amount: 0,
+          mul_no: mul_no || '',
+          payment_status: 'failed',
         });
       }
 

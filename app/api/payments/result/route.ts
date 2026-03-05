@@ -17,7 +17,7 @@ async function sendSlackNotification(data: {
 
   try {
     const message = {
-      text: `결제 ${data.payment_status === 'paid' ? '완료' : '실패'} 알림`,
+      text: `[선납부신청] 결제 ${data.payment_status === 'paid' ? '완료' : '실패'} 알림`,
       attachments: [
         {
           color: data.payment_status === 'paid' ? '#28A745' : '#EE5A6F',
@@ -90,8 +90,8 @@ export async function GET(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || '';
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
 
-    // 결제 성공 여부 확인 (state가 명시적으로 '1'일 때만 성공)
-    if (state === '1') {
+    // 결제 성공 여부 확인 (state '1' 또는 mul_no 있으면 성공)
+    if (state === '1' || (state === null && mul_no)) {
       // 데이터베이스 업데이트 - 결제 성공 (certificate_applications 테이블)
       const { error: updateError, data: appData } = await supabase
         .from('certificate_applications')
@@ -440,8 +440,8 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || '';
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
 
-    // 데이터베이스에 결제 결과 저장 (state가 명시적으로 '1'일 때만 성공)
-    if (state === '1') {
+    // 데이터베이스에 결제 결과 저장 (state '1' 또는 mul_no 있으면 성공)
+    if (state === '1' || (state === null && mul_no)) {
       const { error: updateError, data: appData } = await supabase
         .from('certificate_applications')
         .update({
