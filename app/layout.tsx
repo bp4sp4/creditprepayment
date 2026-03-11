@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     description: "취업자격증 발급비 선납 웹사이트",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image.png?v=2",
         width: 1200,
         height: 630,
         alt: "취업자격증 발급비 선납 서비스 사이트",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "취업자격증 발급비 선납 서비스 사이트",
     description: "취업자격증 발급비 선납 웹사이트",
-    images: ["/og-image.png"],
+    images: ["/og-image.png?v=2"],
   },
 };
 
