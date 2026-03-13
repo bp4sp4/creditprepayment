@@ -543,7 +543,7 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
                       lineHeight: "1.3",
                     }}
                   >
-                    자격증 연계 신청
+                 자격증 발급비 결제
                   </h1>
                 </div>
             <div className={styles.inputGroup}>
