@@ -140,6 +140,23 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
   );
   const [showPhotoPreview, setShowPhotoPreview] = useState(false);
 
+  // ref 파라미터 (추적 링크용)
+  const [refCode, setRefCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get("ref");
+      if (ref) {
+        sessionStorage.setItem("ref", ref);
+        setRefCode(ref);
+      } else {
+        const savedRef = sessionStorage.getItem("ref");
+        if (savedRef) setRefCode(savedRef);
+      }
+    }
+  }, []);
+
   // 전체 선택 함수
   const handleSelectAll = () => {
     const allCerts = CERTIFICATE_CATEGORIES.flatMap((cat) => cat.options);
@@ -273,6 +290,7 @@ function StepFlowContent({ clickSource }: { clickSource: string }) {
           amount: amount,
           payment_status: "pending",
           source: "prepayment",
+          ...(refCode ? { ref: refCode } : {}),
         }),
       });
 
