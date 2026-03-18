@@ -17,25 +17,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://creditprepayment.vercel.app"),
   title: "취업자격증 발급비 카드결제",
   description: "한평생 자격증 발급비 카드결제 사이트",
   openGraph: {
     title: "취업자격증 발급비 카드결제",
     description: "한평생 자격증 발급비 카드결제 사이트",
+    url: "https://creditprepayment.vercel.app",
+    siteName: "한평생교육원",
     images: [
       {
-        url: "/og-image.png?v=2",
+        url: "https://creditprepayment.vercel.app/og-image.png",
         width: 1200,
         height: 630,
         alt: "한평생 자격증 발급비 카드결제 사이트",
       },
     ],
+    type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "취업자격증 발급비 카드결제",
     description: "한평생 자격증 발급비 카드결제 사이트",
-    images: ["/og-image.png?v=2"],
+    images: ["https://creditprepayment.vercel.app/og-image.png"],
   },
 };
 
